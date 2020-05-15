@@ -103,6 +103,7 @@ impl EventHandler for MandelbrotSim {
             println!("FPS: {}", ggez::timer::fps(ctx));
         }
 
+        //panic!("Ok");
         graphics::present(ctx)
     }
 }

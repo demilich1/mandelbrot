@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 pub struct MandelbrotRenderParams {
     pub min_x_coord: f64,
     pub max_x_coord: f64,
@@ -31,25 +33,35 @@ impl MandelbrotRenderParams {
 }
 
 pub fn render_to_buffer(params: &MandelbrotRenderParams, buffer: &mut [u8]) {
-    for idx in (0..buffer.len()).step_by(4) {
-        let idx_n = (idx / 4) as u32;
-        let x = idx_n % params.width as u32;
-        let y = idx_n / params.width as u32;
-        let cx = params.min_x_coord
-            + (x as f64 / params.width as f64) * (params.max_x_coord - params.min_x_coord);
-        let cy = params.min_y_coord
-            + (y as f64 / params.height as f64) * (params.max_y_coord - params.min_y_coord);
-        let m = mandelbrot(
-            params.offset_x + cx / params.zoom,
-            params.offset_y + cy / params.zoom,
-            params.max_iter,
-        );
-        let color = get_color(m, params.max_iter);
+    let result: Vec<[u8; 3]> = buffer
+        .par_iter()
+        .step_by(4)
+        .enumerate()
+        .map(|(idx, _)| {
+            let idx_n = idx as u32;
+            let x = idx_n % params.width as u32;
+            let y = idx_n / params.width as u32;
+            let cx = params.min_x_coord
+                + (x as f64 / params.width as f64) * (params.max_x_coord - params.min_x_coord);
+            let cy = params.min_y_coord
+                + (y as f64 / params.height as f64) * (params.max_y_coord - params.min_y_coord);
+            let m = mandelbrot(
+                params.offset_x + cx / params.zoom,
+                params.offset_y + cy / params.zoom,
+                params.max_iter,
+            );
+            let color = get_color(m, params.max_iter);
+            color
+        })
+        .collect();
 
-        buffer[idx] = color.0;
-        buffer[idx + 1] = color.1;
-        buffer[idx + 2] = color.2;
-        buffer[idx + 3] = 255;
+    for i in (0..buffer.len()).step_by(4) {
+        let idx = i / 4;
+        let color = result[idx];
+        buffer[i] = color[0];
+        buffer[i + 1] = color[1];
+        buffer[i + 2] = color[2];
+        buffer[i + 3] = 255;
     }
 }
 
@@ -68,7 +80,7 @@ fn mandelbrot(cx: f64, cy: f64, max_iter: u16) -> u16 {
     n
 }
 
-fn get_color(iter: u16, max_iter: u16) -> (u8, u8, u8) {
+fn get_color(iter: u16, max_iter: u16) -> [u8; 3] {
     let t = iter as f64 / max_iter as f64;
     let rt = 9.0 * (1.0 - t) * t.powi(3);
     let gt = 15.0 * (1.0 - t).powi(2) * t.powi(2);
@@ -76,5 +88,5 @@ fn get_color(iter: u16, max_iter: u16) -> (u8, u8, u8) {
     let r = (rt * 255.0) as u8;
     let g = (gt * 255.0) as u8;
     let b = (bt * 255.0) as u8;
-    (r, g, b)
+    [r, g, b]
 }

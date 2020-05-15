@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 ggez = "0.5"
+# need current 'master' of rayon as the .step_by functionality is not yet released
+rayon = { git = "https://github.com/rayon-rs/rayon/"}
