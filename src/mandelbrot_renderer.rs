@@ -8,13 +8,16 @@ pub struct MandelbrotRenderParams {
     pub offset_x: f64,
     pub offset_y: f64,
     pub zoom: f64,
-    pub zoom_speed: f64,
     pub max_iter: u16,
     pub width: u16,
     pub height: u16,
 }
 
 impl MandelbrotRenderParams {
+    pub const DEFAULT_ITER: u16 = 256;
+    pub const MIN_ITER: u16 = 16;
+    pub const MAX_ITER: u16 = 8192;
+
     pub fn new(width: usize, height: usize) -> Self {
         MandelbrotRenderParams {
             min_x_coord: -2.0,
@@ -24,8 +27,7 @@ impl MandelbrotRenderParams {
             offset_x: 0.0,
             offset_y: 0.0,
             zoom: 1.0,
-            zoom_speed: 1.0,
-            max_iter: 100,
+            max_iter: MandelbrotRenderParams::DEFAULT_ITER,
             width: width as u16,
             height: height as u16,
         }
@@ -33,6 +35,10 @@ impl MandelbrotRenderParams {
 }
 
 pub fn render_to_buffer(params: &MandelbrotRenderParams, buffer: &mut [u8]) {
+    // build a result vector of colors
+    // we could do the whole calculation in a single loop over buffer
+    // however in that case the loop could not easily be parallelized
+    // performance is much better with 2 loops and multicore usage
     let result: Vec<[u8; 3]> = buffer
         .par_iter()
         .step_by(4)
@@ -55,6 +61,7 @@ pub fn render_to_buffer(params: &MandelbrotRenderParams, buffer: &mut [u8]) {
         })
         .collect();
 
+    // write back calculated colors in input buffer
     for i in (0..buffer.len()).step_by(4) {
         let idx = i / 4;
         let color = result[idx];
