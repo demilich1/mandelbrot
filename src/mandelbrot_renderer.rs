@@ -35,6 +35,9 @@ impl MandelbrotRenderParams {
 }
 
 pub fn render_to_buffer(params: &MandelbrotRenderParams, buffer: &mut [u8]) {
+    // iterate over the buffer in chunks of 4
+    // each chunk represents a single pixel with the color (R, B, G, A)
+    // iteration in performed in parallel by using par_chunks_mut from 'rayon'
     buffer
         .par_chunks_mut(4)
         .enumerate()
@@ -101,5 +104,18 @@ mod tests {
             "Rendering {:?}x{:?} with {:?} mandelbrot iterations took {:?}",
             &width, &height, &params.max_iter, &duration,
         );
+    }
+
+    #[test]
+    fn test_bench_1920_1080_get_color() {
+        let mut buf = vec![0; 4];
+        let iter: u32 = 1920 * 1080;
+        let start = Instant::now();
+        for i in 0..iter {
+            get_color(i as u16, iter as u16, &mut buf);
+        }
+
+        let duration = start.elapsed();
+        println!("get_color() x{:?} times took {:?}", &iter, &duration,);
     }
 }
