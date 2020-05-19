@@ -29,6 +29,7 @@ fn main() -> GameResult {
 }
 
 struct MandelbrotSim {
+    print_fps: bool,
     frames: i32,
     params: MandelbrotRenderParams,
     buffer: Vec<u8>,
@@ -41,6 +42,7 @@ impl MandelbrotSim {
         let buf = vec![0; width * height * 4];
 
         let state = MandelbrotSim {
+            print_fps: true,
             frames: 0,
             params: MandelbrotRenderParams::new(width, height),
             buffer: buf,
@@ -111,10 +113,12 @@ impl EventHandler for MandelbrotSim {
         let dst = Point2::new(0.0, 0.0);
         graphics::draw(ctx, &image, (dst,))?;
 
-        self.frames += 1;
-        //if (self.frames % 10) == 0 {
-        //    println!("FPS: {}", ggez::timer::fps(ctx));
-        //}
+        if self.print_fps {
+            self.frames += 1;
+            if (self.frames % 10) == 0 {
+                println!("FPS: {}", ggez::timer::fps(ctx));
+            }
+        }
 
         graphics::present(ctx)
     }

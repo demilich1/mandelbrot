@@ -51,10 +51,7 @@ pub fn render_to_buffer(params: &MandelbrotRenderParams, buffer: &mut [u8]) {
                 params.offset_y + cy / params.zoom,
                 params.max_iter,
             );
-            let color = get_color(m, params.max_iter);
-            chunk[0] = color[0];
-            chunk[1] = color[1];
-            chunk[2] = color[2];
+            get_color(m, params.max_iter, chunk);
             chunk[3] = 255;
         });
 }
@@ -75,13 +72,34 @@ fn mandelbrot(cx: f64, cy: f64, max_iter: u16) -> u16 {
     n
 }
 
-fn get_color(iter: u16, max_iter: u16) -> [u8; 3] {
+fn get_color(iter: u16, max_iter: u16, color: &mut [u8]) {
     let t = iter as f64 / max_iter as f64;
     let rt = 9.0 * (1.0 - t) * t.powi(3);
     let gt = 15.0 * (1.0 - t).powi(2) * t.powi(2);
     let bt = 8.5 * (1.0 - t).powi(3) * t;
-    let r = (rt * 255.0) as u8;
-    let g = (gt * 255.0) as u8;
-    let b = (bt * 255.0) as u8;
-    [r, g, b]
+    color[0] = (rt * 255.0) as u8;
+    color[1] = (gt * 255.0) as u8;
+    color[2] = (bt * 255.0) as u8;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Instant;
+
+    #[test]
+    fn test_bench_1920_1080_with_8096_iters() {
+        let width = 1920;
+        let height = 1080;
+        let mut params = MandelbrotRenderParams::new(width, height);
+        params.max_iter = 8096;
+        let mut buf = vec![0; width * height * 4];
+        let start = Instant::now();
+        render_to_buffer(&params, &mut buf);
+        let duration = start.elapsed();
+        println!(
+            "Rendering {:?}x{:?} with {:?} mandelbrot iterations took {:?}",
+            &width, &height, &params.max_iter, &duration,
+        );
+    }
 }
