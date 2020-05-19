@@ -36,7 +36,7 @@ impl MandelbrotRenderParams {
 
 pub fn render_to_buffer(params: &MandelbrotRenderParams, buffer: &mut [u8]) {
     buffer
-        .par_chunks_exact_mut(4)
+        .par_chunks_mut(4)
         .enumerate()
         .for_each(|(idx, chunk)| {
             let idx_n = idx as u32;
