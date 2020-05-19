@@ -36,7 +36,6 @@ struct MandelbrotSim {
 
 impl MandelbrotSim {
     pub fn new(_ctx: &mut Context) -> GameResult<MandelbrotSim> {
-        // Load/create resources such as images here.
         let width = 800;
         let height = 600;
         let buf = vec![0; width * height * 4];

@@ -35,15 +35,10 @@ impl MandelbrotRenderParams {
 }
 
 pub fn render_to_buffer(params: &MandelbrotRenderParams, buffer: &mut [u8]) {
-    // build a result vector of colors
-    // we could do the whole calculation in a single loop over buffer
-    // however in that case the loop could not easily be parallelized
-    // performance is much better with 2 loops and multicore usage
-    let result: Vec<[u8; 3]> = buffer
-        .par_iter()
-        .step_by(4)
+    buffer
+        .par_chunks_exact_mut(4)
         .enumerate()
-        .map(|(idx, _)| {
+        .for_each(|(idx, chunk)| {
             let idx_n = idx as u32;
             let x = idx_n % params.width as u32;
             let y = idx_n / params.width as u32;
@@ -57,32 +52,25 @@ pub fn render_to_buffer(params: &MandelbrotRenderParams, buffer: &mut [u8]) {
                 params.max_iter,
             );
             let color = get_color(m, params.max_iter);
-            color
-        })
-        .collect();
-
-    // write back calculated colors in input buffer
-    for i in (0..buffer.len()).step_by(4) {
-        let idx = i / 4;
-        let color = result[idx];
-        buffer[i] = color[0];
-        buffer[i + 1] = color[1];
-        buffer[i + 2] = color[2];
-        buffer[i + 3] = 255;
-    }
+            chunk[0] = color[0];
+            chunk[1] = color[1];
+            chunk[2] = color[2];
+            chunk[3] = 255;
+        });
 }
 
 fn mandelbrot(cx: f64, cy: f64, max_iter: u16) -> u16 {
-    let mut zx = 0.0;
-    let mut zy = 0.0;
+    let mut zx: f64 = 0.0;
+    let mut zy: f64 = 0.0;
     let mut n = 0;
-    let mut abs = 0.0;
-    while abs <= 4.0 && n < max_iter {
-        let tmp = zx * zx - zy * zy + cx;
+    for _i in 0..max_iter {
+        let zxn = zx.powi(2) - zy.powi(2) + cx;
         zy = 2.0 * zx * zy + cy;
-        zx = tmp;
+        zx = zxn;
         n += 1;
-        abs = zx * zx + zy * zy;
+        if zx.powi(2) + zy.powi(2) > 4.0 {
+            break;
+        }
     }
     n
 }
