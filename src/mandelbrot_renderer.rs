@@ -63,7 +63,7 @@ fn mandelbrot(cx: f64, cy: f64, max_iter: u16) -> u16 {
     let mut zx: f64 = 0.0;
     let mut zy: f64 = 0.0;
     let mut n = 0;
-    for _i in 0..max_iter {
+    while n < max_iter {
         let zxn = zx.powi(2) - zy.powi(2) + cx;
         zy = 2.0 * zx * zy + cy;
         zx = zxn;
